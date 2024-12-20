@@ -43,6 +43,7 @@ class Application:
     
     def constructNewProduct(self, product:FactoryProduct, use_inventory=True, update_inventory=False) -> tuple[tuple[FactoryProduct, int]]:
         required_resources = {}
+        inventory = {}
         queue:Queue[tuple[FactoryProduct, int]] = Queue()
 
         # adicionando à fila de verificação de recursos
@@ -55,18 +56,25 @@ class Application:
             product_id = product.id
             
             # caso utilize do inventário
-            if False: # use_inventory: # TODO: juntar recursos necessários na consulta ao inventário
+            if use_inventory: # TODO: juntar recursos necessários na consulta ao inventário
+
+                if product_id not in inventory:
+                    inventory[product_id] = self.getInventory(product)
 
                 # verificando quantidade disponível em estoque
-                if not self.checkInventory(product, quantity): # caso não tenha a quantidade necessária
+                if quantity > inventory[product_id]: # caso não tenha a quantidade necessária
                     if product_id not in required_resources:
                         required_resources[product_id] = 0
                     
-                    required_resources[product_id] += quantity - self.getInventory(product)
+                    required_resources[product_id] += quantity - inventory[product_id]
+                    inventory[product_id] = 0
                     
                     # adicionando à fila de verificação de recursos
                     for p, qtd in product.resources:
                         queue.put((p, qtd*quantity))
+
+                else:
+                    inventory[product_id] -= quantity
             
             else:
                 if product_id not in required_resources:
