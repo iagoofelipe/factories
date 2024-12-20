@@ -1,8 +1,8 @@
 # Requisitos Funcionais
 
 - controle de itens em estoque, com suas respectivas características
-- o sistema deve conter um menu de produtos
-- o sistema deve permitir que o usuário escolha um produto e exiba os passsos necessários para a geração do item, a partir da quantidade necessária, recursos disponíveis em estoque e tempo de fabricação
+- o sistema deve conter uma área com o estoque disponível
+- o sistema deve permitir que o usuário escolha um produto e exiba os passos necessários para a geração do item, a partir da quantidade necessária, recursos disponíveis em estoque e tempo de fabricação
 
 ## Item de Inventário
 Objeto que deverá ser armazenado no inventário. Cada item deverá conter as seguintes características:

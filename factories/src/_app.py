@@ -1,4 +1,5 @@
 from sqlite3 import connect
+from queue import Queue
 
 from ._factory import Factory
 from ._product import FactoryProduct
@@ -10,14 +11,96 @@ class Application:
 
         self.generate()
 
+    @property
+    def products(self) -> list[FactoryProduct]:
+        return list(self.__products_id.values())
+    
+    def getProductByName(self, name:str) -> FactoryProduct | None:
+        return self.__products_name.get(name)
+    
+    def getProductById(self, productId:int) -> FactoryProduct | None:
+        return self.__products_id.get(productId)
+
     def generate(self):
         """ gera as estruturas a partir da base de dados """
-        self.__products_id = {}
-        self.__products_name = {}
+        self.__generateFactory()
+        self.__generateProduct()
+        self.__generateInventory()
+
+    def updateInventory(self, product:FactoryProduct, quantity:int, add=False):
+        product_id = product.id
+
+        if product_id in self.__inventory:
+            if add:
+                quantity += self.__inventory[product_id]
+            cmd = 'UPDATE inventory_product SET quantity=? WHERE product_id=?'
+        else:
+            cmd = 'INSERT INTO inventory_product (quantity, product_id) VALUES (?, ?)'
+
+        self.__cursor.execute(cmd, (quantity, product_id))
+        self.__conn.commit()
+        self.__generateInventory()
+    
+    def constructNewProduct(self, product:FactoryProduct, use_inventory=True, update_inventory=False) -> tuple[tuple[FactoryProduct, int]]:
+        required_resources = {}
+        queue:Queue[tuple[FactoryProduct, int]] = Queue()
+
+        # adicionando à fila de verificação de recursos
+        for rsc in product.resources:
+            queue.put(rsc)
+        
+        while not queue.empty():
+            # verificando recursos necessários
+            product, quantity = queue.get()
+            product_id = product.id
+            
+            # caso utilize do inventário
+            if False: # use_inventory: # TODO: juntar recursos necessários na consulta ao inventário
+
+                # verificando quantidade disponível em estoque
+                if not self.checkInventory(product, quantity): # caso não tenha a quantidade necessária
+                    if product_id not in required_resources:
+                        required_resources[product_id] = 0
+                    
+                    required_resources[product_id] += quantity - self.getInventory(product)
+                    
+                    # adicionando à fila de verificação de recursos
+                    for p, qtd in product.resources:
+                        queue.put((p, qtd*quantity))
+            
+            else:
+                if product_id not in required_resources:
+                    required_resources[product_id] = 0
+                
+                required_resources[product_id] += quantity
+
+                # adicionando à fila de verificação de recursos
+                for p, qtd in product.resources:
+                    queue.put((p, qtd*quantity))
+
+        return tuple([(self.__products_id[k], v) for k, v in required_resources.items()])
+
+    
+    def getInventory(self, product:FactoryProduct) -> int:
+        """ retorna a quantidade disponível em estoque para um produto """
+        return self.__inventory.get(product.id, 0)
+    
+    def checkInventory(self, product:FactoryProduct, quantity=1) -> bool:
+        """ verifica se há a quantidade desejada em estoque """
+        return quantity <= self.getInventory(product)
+
+    def removeFromInventory(self, product:FactoryProduct, quantity=1) -> bool:
+        if not self.checkInventory(product, quantity):
+            return False
+        
+        quantity = self.getInventory(product) - quantity
+        self.updateInventory(product, quantity)
+        return True
+
+    def __generateFactory(self):
         self.__factories_id = {}
         self.__factories_name = {}
 
-        # gerando factories
         self.__cursor.execute('SELECT * FROM factory')
         for _id, name, capacity in self.__cursor.fetchall():
             factory = Factory(name, capacity)
@@ -26,12 +109,15 @@ class Application:
             self.__factories_id[_id] = factory
             self.__factories_name[name] = factory
 
-        # gerando products
+    def __generateProduct(self):
+        self.__products_id = {}
+        self.__products_name = {}
+
         self.__cursor.execute('SELECT * FROM product')
         for _id, name, time, factory_id, time_base in self.__cursor.fetchall():
             time *= time_base
             factory = self.__factories_id[factory_id]
-            product = FactoryProduct(name, time, factory)
+            product = FactoryProduct(_id, name, time, factory)
             
             # armazenando objeto gerado
             self.__products_id[_id] = product
@@ -42,13 +128,9 @@ class Application:
         for _id, product_id, rsc_id, quantity in self.__cursor.fetchall():
             self.__products_id[product_id].resources.append((self.__products_id[rsc_id], quantity))
 
-    
-    @property
-    def products(self) -> list[FactoryProduct]:
-        return list(self.__products_id.values())
-    
-    def getProductByName(self, name:str) -> FactoryProduct | None:
-        return self.__products_name.get(name)
-    
-    def getProductById(self, productId:int) -> FactoryProduct | None:
-        return self.__products_id.get(productId)
+    def __generateInventory(self):
+        self.__inventory = {}
+
+        self.__cursor.execute('SELECT * FROM inventory_product')
+        for _id, product_id, quantity in self.__cursor.fetchall():
+            self.__inventory[product_id] = quantity

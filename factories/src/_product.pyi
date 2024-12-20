@@ -3,9 +3,9 @@ from ._factory import Factory
 
 class FactoryProduct:
     @overload
-    def __init__(self, name:str, time:int, factory:Factory) -> None: ...
+    def __init__(self, id:int, name:str, time:int, factory:Factory) -> None: ...
     @overload
-    def __init__(self, name:str, time:int, factory:Factory, resources:list) -> None: ...
+    def __init__(self, id:int, name:str, time:int, factory:Factory, resources:list) -> None: ...
 
     @property
     def time(self) -> int:
@@ -14,6 +14,10 @@ class FactoryProduct:
     @property
     def name(self) -> str:
         """ nome do produto """
+
+    @property
+    def id(self) -> int:
+        """ id do produto """
 
     @property
     def factory(self) -> Factory:

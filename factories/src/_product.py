@@ -1,12 +1,13 @@
 class FactoryProduct:
-    def __init__(self, name, time, factory, resources=None):
+    def __init__(self, id, name, time, factory, resources=None):
+        self.__id = id
         self.__name = name
         self.__time = time
         self.__factory = factory
         self.__resources = [] if resources is None else resources
 
     def __str__(self):
-        return f'<FactoryProduct={self.__name}>'
+        return f'<FactoryProduct {self.__name}>'
     
     def __repr__(self):
         return self.__str__()
@@ -22,6 +23,10 @@ class FactoryProduct:
     @property
     def factory(self):
         return self.__factory
+
+    @property
+    def id(self):
+        return self.__id
 
     @property
     def resources(self):

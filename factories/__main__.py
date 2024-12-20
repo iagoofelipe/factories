@@ -2,16 +2,20 @@ from .src._app import Application
 
 if __name__ == '__main__':
     app = Application()
-    product = app.getProductByName('hambúrguer')
     
-    if product is None:
-        print('produto não encontrado!')
-    else:
-        product.display()
+    # cadastrando 5 rações e 3 metais
+    # app.updateInventory(app.getProductByName('ração'), 5)
+    # app.updateInventory(app.getProductByName('metal'), 3)
+    
+    product = app.getProductByName('hambúrguer')
 
-    product = app.getProductById(15)
+    print(f'recursos necessários sem estoque:')
+    for p, qtd in app.constructNewProduct(product, False):
+        print(f'\t{p}: {qtd} unidade(s)')
 
-    if product is None:
-        print('produto não encontrado!')
-    else:
-        product.display()
+    # print(f'recursos necessários com estoque:')
+    # for p, qtd in app.constructNewProduct(product):
+    #     print(f'\t{p}: {qtd} unidade(s)')
+
+    # metal = app.getProductByName('metal')
+    # print(app.checkInventory(metal, 5), app.getInventory(metal))
