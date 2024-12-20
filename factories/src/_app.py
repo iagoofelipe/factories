@@ -56,7 +56,7 @@ class Application:
             product_id = product.id
             
             # caso utilize do inventário
-            if use_inventory: # TODO: juntar recursos necessários na consulta ao inventário
+            if use_inventory:
 
                 if product_id not in inventory:
                     inventory[product_id] = self.getInventory(product)
